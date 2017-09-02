@@ -1,0 +1,6 @@
+setuptools==36.3.0
+pytest==3.2.1
+mypy==0.521
+pylint==1.7.2
+gunicorn==19.7.1
+sanic==0.6.0
