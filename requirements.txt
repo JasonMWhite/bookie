@@ -1,4 +1,4 @@
-setuptools==36.3.0
+setuptools==36.2.0
 pytest==3.2.1
 mypy==0.521
 pylint==1.7.2
