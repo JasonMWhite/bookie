@@ -1,24 +1,13 @@
-import logging
-
 from sanic import Sanic
 from sanic import response
 
 
-app = Sanic(__name__)
+app = Sanic(__name__)  # pylint: disable=invalid-name
 
 
 @app.route('/')
-async def hello(request):
+async def hello(_):
     return response.html('<p><b>Hello, world!</p>')
-
-
-# @app.errorhandler(500)
-# def server_error(e):
-#     logging.exception('An error occurred during a request.')
-#     return """
-#     An internal error occurred: <pre>{}</pre>
-#     See logs for full stacktrace.
-#     """.format(e), 500
 
 
 if __name__ == '__main__':
