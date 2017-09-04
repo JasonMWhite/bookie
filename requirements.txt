@@ -6,6 +6,6 @@ gunicorn==19.7.1
 flask==0.12.2
 google-api-python-client==1.6.3
 httplib2==0.10.3
-oauth2client==3.0.0
 google-cloud==0.27.0
 pytest-flask==0.10.0
+flask-oauthlib==0.9.4
