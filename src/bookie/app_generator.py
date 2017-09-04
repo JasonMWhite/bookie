@@ -5,9 +5,7 @@ import uuid
 import flask
 from google.cloud import storage
 import httplib2
-from oauth2client.contrib import flask_util
-
-oauth2 = flask_util.UserOAuth2()  # pylint: disable=invalid-name
+from flask_oauthlib.client import OAuth
 
 
 def _get_google_secrets() -> typing.Dict[str, str]:
@@ -17,8 +15,8 @@ def _get_google_secrets() -> typing.Dict[str, str]:
     secrets = json.loads(blob.download_as_string())
 
     return {
-        'GOOGLE_OAUTH2_CLIENT_ID': secrets['web']['client_id'],
-        'GOOGLE_OAUTH2_CLIENT_SECRET': secrets['web']['client_secret'],
+        'GOOGLE_ID': secrets['web']['client_id'],
+        'GOOGLE_SECRET': secrets['web']['client_secret'],
     }
 
 
@@ -39,6 +37,9 @@ def _request_user_info(credentials) -> None:
         flask.session['user.email'] = json.loads(content.decode('utf-8'))['email']
 
 
+oauth = OAuth()  # pylint: disable=invalid-name
+
+
 def create_app() -> flask.Flask:
     # pylint: disable=unused-variable
     secrets = _get_google_secrets()
@@ -48,10 +49,18 @@ def create_app() -> flask.Flask:
     app = flask.Flask(__name__, template_folder=templates)
     app.config.from_mapping(secrets.items())
 
-    oauth2.init_app(
-        app,
-        scopes=['email', 'profile'],
-        authorize_callback=_request_user_info
+    google = oauth.remote_app(
+        'google',
+        consumer_key=app.config.get('GOOGLE_ID'),
+        consumer_secret=app.config.get('GOOGLE_SECRET'),
+        request_token_params={
+            'scope': 'email'
+        },
+        base_url='https://www.googleapis.com/oauth2/v3/',
+        request_token_url=None,
+        access_token_method='POST',
+        access_token_url='https://accounts.google.com/o/oauth2/token',
+        authorize_url='https://accounts.google.com/o/oauth2/auth',
     )
 
     @app.route('/')
@@ -60,25 +69,48 @@ def create_app() -> flask.Flask:
         return flask.render_template('index.html', user=user)
 
     @app.route('/login')
-    @oauth2.required
     def login():
-        return flask.redirect('/')
+        return google.authorize(callback=flask.url_for('authorized', _external=True))
+
+    @app.route('/login/authorized')
+    def authorized():
+        resp = google.authorized_response()
+        if resp is None:
+            return 'Access denied: reason=%s error=%s' % (
+                flask.request.args['error_reason'],
+                flask.request.args['error_description']
+            )
+        flask.session['google_token'] = (resp['access_token'], '')
+
+        user_email = google.get('userinfo').data['email']
+        if user_email in ['actinolite.jw@gmail.com']:
+            flask.session['user.email'] = google.get('userinfo').data['email']
+            return flask.redirect(flask.url_for('index'))
+        else:
+            flask.abort(401)
 
     @app.route('/logout')
     def logout():
         # Delete the user's profile and the credentials stored by oauth2.
+        del flask.session['google_token']
         del flask.session['user.email']
         flask.session.modified = True
-        oauth2.storage.delete()
         return flask.redirect('/')
 
     @app.route('/search')
-    @oauth2.required
     def search():
         return flask.render_template('search.html')
 
     @app.route('/_ah/health')
     def status():
         return 'OK', 200
+
+    @google.tokengetter
+    def get_google_oauth_token():
+        return flask.session.get('google_token')
+
+    @app.errorhandler(401)
+    def unauthorized(_):
+        return flask.Response('<b>Unauthorized</b><p>You are not authorized to use this application</p>', 401)
 
     return app
