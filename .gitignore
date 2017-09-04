@@ -98,7 +98,7 @@ ENV/
 /site
 
 # mypy
-.mypy_cache/
 
 # project fies
 key.json
+.mypy_cache/

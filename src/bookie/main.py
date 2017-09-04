@@ -1,13 +1,14 @@
 import json
 import logging
-import tempfile
 import uuid
 
-from apiclient import discovery
 import flask
+from flask_oauthlib import client as oauth_client
 from google.cloud import storage
-import httplib2
-from oauth2client import client
+
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 
 app = flask.Flask(__name__)  # pylint: disable=invalid-name
@@ -15,55 +16,80 @@ app.secret_key = str(uuid.uuid4())
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.secure_scheme_headers = {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.INFO)
+
+def get_google_oauth() -> oauth_client.OAuthRemoteApp:
+    gclient = storage.Client()
+    bucket = gclient.bucket('bookie-178719.appspot.com')
+    blob = bucket.blob('secrets/client_secrets.json')
+    secrets = json.loads(blob.download_as_string())
+
+    client_id = secrets['web']['client_id']
+    client_secret = secrets['web']['client_secret']
+
+    oauth = oauth_client.OAuth(app)
+    return oauth.remote_app('google',
+                            consumer_key=client_id,
+                            consumer_secret=client_secret,
+                            request_token_params={'scope': 'email'},
+                            base_url='https://www.googleapis.com/oauth2/v1/',
+                            request_token_url=None,
+                            access_token_method='POST',
+                            access_token_url='https://accounts.google.com/o/oauth2/token',
+                            authorize_url='https://accounts.google.com/o/oauth2/auth',
+                            )
+
+
+google = get_google_oauth()  # pylint: disable=invalid-name
 
 
 @app.route('/')
 def index():
-    if 'credentials' not in flask.session:
-        return flask.redirect(flask.url_for('oauth2callback'))
-    credentials = client.OAuth2Credentials.from_json(flask.session['credentials'])
-    if credentials.access_token_expired:
-        return flask.redirect(flask.url_for('oauth2callback'))
-
-    http_auth = credentials.authorize(httplib2.Http())
-    drive = discovery.build('drive', 'v2', http_auth)
-    files = drive.files().list().execute()  # pylint: disable=no-member
-    return json.dumps(files)
+    user = flask.session.get('user')
+    return flask.render_template('index.html', user=user)
 
 
-@app.route('/oauth2callback')
-def oauth2callback():
-    flow = client.flow_from_clientsecrets(
-        SECRETS_FILENAME,
-        scope='https://www.googleapis.com/auth/drive.metadata.readonly',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
-    if 'code' not in flask.request.args:
-        auth_uri = flow.step1_get_authorize_url()
-        return flask.redirect(auth_uri)
+@app.route('/login')
+def login():
+    return google.authorize(callback=flask.url_for('authorized', _external=True))
 
-    auth_code = flask.request.args.get('code')
-    credentials = flow.step2_exchange(auth_code)
-    flask.session['credentials'] = credentials.to_json()
-    return flask.redirect(flask.url_for('index', _scheme='https', _external=True))
+
+@app.route('/logout')
+def logout():
+    if 'google_token' in flask.session:
+        flask.session.pop('google_token')
+        flask.session.pop('user')
+    return flask.redirect(flask.url_for('index'))
+
+
+@app.route('/login/authorized')
+def authorized():
+    resp = google.authorized_response()
+
+    if resp is None:
+        return 'Access denied: reason=%s error=%s' % (
+            flask.request.args['error_reason'],
+            flask.request.args['error_description']
+        )
+    flask.session['google_token'] = (resp['access_token'], '')
+    user = google.get('userinfo').data
+
+    if user['email'] == 'actinolite.jw@gmail.com':
+        flask.session['user'] = user
+    else:
+        flask.session.pop('google_token')
+        return 'Access denied: access restricted'
+
+    return flask.redirect(flask.url_for('index'))
+
+
+@google.tokengetter
+def get_google_oauth_token():
+    return flask.session.get('google_token')
 
 
 @app.route('/_ah/health')
 def health_check():
     return 'ok', 200
-
-
-def get_secrets() -> str:
-    secrets_file = tempfile.NamedTemporaryFile(delete=False)
-    gclient = storage.Client()
-    bucket = gclient.bucket('bookie-178719.appspot.com')
-    blob = bucket.blob('secrets/client_secrets.json')
-    blob.download_to_filename(secrets_file.name)
-    return secrets_file.name
-
-
-SECRETS_FILENAME = get_secrets()
 
 
 if __name__ == '__main__':
