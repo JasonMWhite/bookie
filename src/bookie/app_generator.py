@@ -37,6 +37,9 @@ def _request_user_info(credentials) -> None:
         flask.session['user.email'] = json.loads(content.decode('utf-8'))['email']
 
 
+oauth = OAuth()  # pylint: disable=invalid-name
+
+
 def create_app() -> flask.Flask:
     # pylint: disable=unused-variable
     secrets = _get_google_secrets()
@@ -46,7 +49,6 @@ def create_app() -> flask.Flask:
     app = flask.Flask(__name__, template_folder=templates)
     app.config.from_mapping(secrets.items())
 
-    oauth = OAuth()
     google = oauth.remote_app(
         'google',
         consumer_key=app.config.get('GOOGLE_ID'),

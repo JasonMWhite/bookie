@@ -1,6 +1,7 @@
 import typing
 import _pytest.monkeypatch
 import flask.testing
+import mock
 import pytest
 from bookie import app_generator
 
@@ -13,4 +14,6 @@ def app(monkeypatch: _pytest.monkeypatch.MonkeyPatch) -> flask.Flask:
             'GOOGLE_OAUTH2_CLIENT_SECRET': 'client_secret'
         }
     monkeypatch.setattr(app_generator, '_get_google_secrets', _get_google_secrets)
+    monkeypatch.setattr(app_generator, 'oauth', mock.Mock())
+
     return app_generator.create_app()
