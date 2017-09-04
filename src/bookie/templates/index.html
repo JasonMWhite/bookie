@@ -5,8 +5,9 @@
     <title>Bookie</title>
 </head>
 <body>
-    {% if user and user.email %}
-    <p>Currently logged in user: {{user.email}}</p>
+    {% if user %}
+    <p>Currently logged in user: {{user}}</p>
+    <a href="/search">Search</a>
     <a href="/logout">Logout</a>
     {% else %}
     <p>Currently logged in user: None</p>
