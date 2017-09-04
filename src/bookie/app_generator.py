@@ -56,7 +56,7 @@ def create_app() -> flask.Flask:
         request_token_params={
             'scope': 'email'
         },
-        base_url='https://www.googleapis.com/oauth2/v1/',
+        base_url='https://www.googleapis.com/oauth2/v3/',
         request_token_url=None,
         access_token_method='POST',
         access_token_url='https://accounts.google.com/o/oauth2/token',
@@ -82,8 +82,12 @@ def create_app() -> flask.Flask:
             )
         flask.session['google_token'] = (resp['access_token'], '')
 
-        flask.session['user.email'] = google.get('userinfo').data['email']
-        return flask.redirect(flask.url_for('index'))
+        user_email = google.get('userinfo').data['email']
+        if user_email in ['actinolite.jw@gmail.com']:
+            flask.session['user.email'] = google.get('userinfo').data['email']
+            return flask.redirect(flask.url_for('index'))
+        else:
+            flask.abort(401)
 
     @app.route('/logout')
     def logout():
@@ -104,5 +108,9 @@ def create_app() -> flask.Flask:
     @google.tokengetter
     def get_google_oauth_token():
         return flask.session.get('google_token')
+
+    @app.errorhandler(401)
+    def unauthorized(_):
+        return flask.Response('<b>Unauthorized</b><p>You are not authorized to use this application</p>', 401)
 
     return app
