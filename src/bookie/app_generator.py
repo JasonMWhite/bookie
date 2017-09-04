@@ -1,6 +1,7 @@
 import json
-import uuid
+import os
 import typing
+import uuid
 import flask
 from google.cloud import storage
 import httplib2
@@ -21,7 +22,7 @@ def _get_google_secrets() -> typing.Dict[str, str]:
     }
 
 
-def _request_user_info(credentials):
+def _request_user_info(credentials) -> None:
     http = httplib2.Http()
     credentials.authorize(http)
     resp, content = http.request(
@@ -30,21 +31,21 @@ def _request_user_info(credentials):
     if resp.status != 200:
         flask.current_app.logger.error(
             "Error while obtaining user profile: \n%s: %s", resp, content)
-        return None
+        return
+
     user_email = json.loads(content.decode('utf-8'))['email']
 
     if user_email in ['actinolite.jw@gmail.com']:
         flask.session['user.email'] = json.loads(content.decode('utf-8'))['email']
-    else:
-        return None
 
 
-def create_app():
+def create_app() -> flask.Flask:
     # pylint: disable=unused-variable
     secrets = _get_google_secrets()
     secrets['SECRET_KEY'] = str(uuid.uuid4())
 
-    app = flask.Flask(__name__)
+    templates = os.path.join(os.path.dirname(__file__), 'templates')
+    app = flask.Flask(__name__, template_folder=templates)
     app.config.from_mapping(secrets.items())
 
     oauth2.init_app(
@@ -54,7 +55,7 @@ def create_app():
     )
 
     @app.route('/')
-    def index():
+    def index() -> str:
         user = flask.session.get('user.email')
         return flask.render_template('index.html', user=user)
 
