@@ -1,16 +1,16 @@
 import json
 import logging
-
-import flask
-import httplib2
+import tempfile
 import uuid
 
-from google.cloud import storage
 from apiclient import discovery
+import flask
+from google.cloud import storage
+import httplib2
 from oauth2client import client
-import tempfile
 
-app = flask.Flask(__name__)
+
+app = flask.Flask(__name__)  # pylint: disable=invalid-name
 app.secret_key = str(uuid.uuid4())
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.secure_scheme_headers = {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
@@ -26,11 +26,11 @@ def index():
     credentials = client.OAuth2Credentials.from_json(flask.session['credentials'])
     if credentials.access_token_expired:
         return flask.redirect(flask.url_for('oauth2callback'))
-    else:
-        http_auth = credentials.authorize(httplib2.Http())
-        drive = discovery.build('drive', 'v2', http_auth)
-        files = drive.files().list().execute()
-        return json.dumps(files)
+
+    http_auth = credentials.authorize(httplib2.Http())
+    drive = discovery.build('drive', 'v2', http_auth)
+    files = drive.files().list().execute()  # pylint: disable=no-member
+    return json.dumps(files)
 
 
 @app.route('/oauth2callback')
@@ -42,11 +42,11 @@ def oauth2callback():
     if 'code' not in flask.request.args:
         auth_uri = flow.step1_get_authorize_url()
         return flask.redirect(auth_uri)
-    else:
-        auth_code = flask.request.args.get('code')
-        credentials = flow.step2_exchange(auth_code)
-        flask.session['credentials'] = credentials.to_json()
-        return flask.redirect(flask.url_for('index', _scheme='https', _external=True))
+
+    auth_code = flask.request.args.get('code')
+    credentials = flow.step2_exchange(auth_code)
+    flask.session['credentials'] = credentials.to_json()
+    return flask.redirect(flask.url_for('index', _scheme='https', _external=True))
 
 
 @app.route('/_ah/health')
