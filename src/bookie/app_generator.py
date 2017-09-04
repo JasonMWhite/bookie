@@ -76,4 +76,8 @@ def create_app():
     def search():
         return flask.render_template('search.html')
 
+    @app.route('/_ah/health')
+    def status():
+        return 'OK', 200
+
     return app
