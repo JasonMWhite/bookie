@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bookie</title>
+</head>
+<body>
+    {% if user %}
+    <p>Currently logged in user: {{user}}</p>
+    <a href="/search">Search</a>
+    <a href="/logout">Logout</a>
+    {% else %}
+    <p>Currently logged in user: None</p>
+    <a href="/login">Login</a>
+    {% endif %}
+</body>
+</html>
