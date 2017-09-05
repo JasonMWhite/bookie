@@ -7,6 +7,11 @@ import httplib2
 from flask_oauthlib.client import OAuth
 from bookie.scrapers import meta_scraper
 
+AUTHORIZED_USERS = [
+    'actinolite.jw@gmail.com',
+    'ola.white.ba@gmail.com',
+]
+
 
 def _get_google_secrets() -> typing.Dict[str, str]:
     gclient = storage.Client()
@@ -34,7 +39,7 @@ def _request_user_info(credentials) -> None:
 
     user_email = json.loads(content.decode('utf-8'))['email']
 
-    if user_email in ['actinolite.jw@gmail.com']:
+    if user_email in AUTHORIZED_USERS:
         flask.session['user.email'] = json.loads(content.decode('utf-8'))['email']
 
 
