@@ -1,6 +1,6 @@
-import requests
 import typing
-from lxml import html
+import requests
+from lxml import html  # type: ignore
 
 
 BOOKSTORE_URL = 'https://www.campusbookstore.com/textbooks/used-books/sell-used-books/results'
@@ -13,3 +13,4 @@ def get_resale_price(isbn: str) -> typing.Optional[str]:
     price_nodes: typing.List[html.Element] = tree.xpath(XPATH_LOCATION)
     if price_nodes:
         return price_nodes[0].text_content().split('$')[1]
+    return None

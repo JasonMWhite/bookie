@@ -1,6 +1,6 @@
-import requests
 import typing
-from lxml import html
+import requests
+from lxml import html  # type: ignore
 
 URL = 'https://www.bookmob.ca/actions/ajax/getSellPricing.php'
 
@@ -18,3 +18,4 @@ def get_resale_price(isbn: str) -> typing.Optional[str]:
         for name, price in zip(option_names, option_prices):
             if 'Check/PayPal' in name.text_content():
                 return price.text_content()[1:]
+    return None
