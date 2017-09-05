@@ -91,13 +91,16 @@ def create_app() -> flask.Flask:
     @app.route('/logout')
     def logout():
         # Delete the user's profile and the credentials stored by oauth2.
-        del flask.session['google_token']
-        del flask.session['user.email']
-        flask.session.modified = True
+        if 'google_token' in flask.session:
+            del flask.session['google_token']
+            del flask.session['user.email']
+            flask.session.modified = True
         return flask.redirect('/')
 
     @app.route('/search')
     def search():
+        if 'user.email' not in flask.session:
+            flask.abort(401)
         return flask.render_template('search.html')
 
     @app.route('/_ah/health')
