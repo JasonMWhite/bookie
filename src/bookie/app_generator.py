@@ -1,7 +1,6 @@
 import json
 import os
 import typing
-import uuid
 import flask
 from google.cloud import storage
 import httplib2
@@ -17,6 +16,7 @@ def _get_google_secrets() -> typing.Dict[str, str]:
     return {
         'GOOGLE_ID': secrets['web']['client_id'],
         'GOOGLE_SECRET': secrets['web']['client_secret'],
+        'SECRET_KEY': secrets['web']['client_secret']
     }
 
 
@@ -43,7 +43,6 @@ oauth = OAuth()  # pylint: disable=invalid-name
 def create_app() -> flask.Flask:
     # pylint: disable=unused-variable
     secrets = _get_google_secrets()
-    secrets['SECRET_KEY'] = str(uuid.uuid4())
 
     templates = os.path.join(os.path.dirname(__file__), 'templates')
     app = flask.Flask(__name__, template_folder=templates)
