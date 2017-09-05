@@ -116,7 +116,7 @@ def create_app() -> flask.Flask:
             flask.abort(401)
 
         isbn = flask.request.args.get('isbn')
-        prices = meta_scraper.get_resale_prices(isbn)
+        prices = meta_scraper.get_resale_prices(isbn) if isbn else {}
         return flask.render_template('search.html', isbn=isbn, prices=prices)
 
     return app

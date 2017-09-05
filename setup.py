@@ -10,6 +10,7 @@ setuptools.setup(
     url='https://github.com/JasonMWhite/bookie',
     packages=setuptools.find_packages('src'),
     package_dir={'': 'src'},
+    include_package_data=True,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
