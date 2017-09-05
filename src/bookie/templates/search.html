@@ -10,14 +10,14 @@
     <table>
         <tr>
             <th>ISBN</th>
-            {% for key, _ in sorted(prices.items()) %}
+            {% for key, _ in prices.items()|sort %}
             <th> {{ key }} </th>
             {% endfor %}
         </tr>
         <tr>
             <td>{{ isbn }}</td>
-            {% for _, value in sorted(prices.items()) %}
-            <th> {{ value }} </th>
+            {% for _, value in prices.items()|sort %}
+            <td> {{ value }} </td>
             {% endfor %}
         </tr>
     </table>

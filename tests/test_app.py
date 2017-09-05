@@ -31,6 +31,6 @@ def test_search_isbn(client: flask.testing.FlaskClient, monkeypatch: _pytest.mon
     get_prices.return_value = {'Seller1': '100.00', 'Seller2': '99.00'}
     monkeypatch.setattr(app_generator.meta_scraper, 'get_resale_prices', get_prices)
 
-    res = client.get(flask.url_for('search'))
+    res = client.get(flask.url_for('search', isbn='1234'))
     assert res.status_code == 200
     assert get_prices.call_count == 1
