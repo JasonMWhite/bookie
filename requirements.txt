@@ -9,3 +9,4 @@ httplib2==0.10.3
 google-cloud==0.27.0
 pytest-flask==0.10.0
 flask-oauthlib==0.9.4
+lxml==3.8.0

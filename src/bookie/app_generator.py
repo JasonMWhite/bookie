@@ -5,6 +5,7 @@ import flask
 from google.cloud import storage
 import httplib2
 from flask_oauthlib.client import OAuth
+from bookie.scrapers import meta_scraper
 
 
 def _get_google_secrets() -> typing.Dict[str, str]:
@@ -97,12 +98,6 @@ def create_app() -> flask.Flask:
             flask.session.modified = True
         return flask.redirect('/')
 
-    @app.route('/search')
-    def search():
-        if 'user.email' not in flask.session:
-            flask.abort(401)
-        return flask.render_template('search.html')
-
     @app.route('/_ah/health')
     def status():
         return 'OK', 200
@@ -114,5 +109,14 @@ def create_app() -> flask.Flask:
     @app.errorhandler(401)
     def unauthorized(_):
         return flask.Response('<b>Unauthorized</b><p>You are not authorized to use this application</p>', 401)
+
+    @app.route('/search/')
+    def search():
+        if 'user.email' not in flask.session:
+            flask.abort(401)
+
+        isbn = flask.request.args.get('isbn')
+        prices = meta_scraper.get_resale_prices(isbn)
+        return flask.render_template('search.html', isbn=isbn, prices=prices)
 
     return app
