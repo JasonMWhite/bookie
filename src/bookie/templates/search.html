@@ -5,6 +5,26 @@
     <title>Search Page</title>
 </head>
 <body>
-
+    <h3>Search ISBN</h3>
+    {% if isbn %}
+    <table>
+        <tr>
+            <th>ISBN</th>
+            {% for key in prices.keys() %}
+            <th> {{ key }} </th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>{{ isbn }}</td>
+            {% for value in prices.values() %}
+            <td>{{ value }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+    {% endif %}
+    <form action="/search">
+        <input name="isbn">
+        <input type="submit" value="Submit">
+    </form>
 </body>
 </html>
