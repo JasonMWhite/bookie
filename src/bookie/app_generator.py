@@ -88,7 +88,7 @@ def create_app() -> flask.Flask:
         flask.session['google_token'] = (resp['access_token'], '')
 
         user_email = google.get('userinfo').data['email']
-        if user_email in ['actinolite.jw@gmail.com']:
+        if user_email in AUTHORIZED_USERS:
             flask.session['user.email'] = google.get('userinfo').data['email']
             return flask.redirect(flask.url_for('index'))
         else:
